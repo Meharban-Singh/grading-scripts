@@ -12,11 +12,12 @@ import sys
 import re
 
 HEADINGS_COLUMN = 'A'
-FEEDBACK_COLUMN = 'D'
-MAX_ROWS_TO_CHECK = 75 # efficiency
-MAX_MARKS = 70
+FEEDBACK_COLUMN = 'E'
+MAX_ROWS_TO_CHECK = 67 # efficiency
+MAX_MARKS = 100
 EXISTING_WORKSHEET_NAMES = ['Notes', 'Template'] # Ignores these in the Summary sheet
 REPO_NAME_CELL = 'A1'  
+OUTPUT_XLSX_SUFFIX= "_sorted"
 
 def main():
     
@@ -59,21 +60,20 @@ def main():
             # Check if we have a heading => the font will be bold
             if current_heading_cell.font.bold and current_heading_cell.value is not None and str(current_heading_cell.value).strip().lower() != 'total':     
                 # Add question comments to the output only if it has some feedback
-                if question_comments != "" and not question_comments.endswith("--\n"):
+                if question_comments.strip() != "" and not question_comments.endswith("--\n"):
                     output += question_comments
 
                 question_comments = "\n\n" + current_heading_cell.value + ":\n"
 
                 # After each heading, underline with 'n' hyphens 
                 for _ in range(0, len(current_heading_cell.value)):
-                    question_comments += "-"
+                    question_comments += "-" 
 
-                question_comments +="\n"                
-
+                question_comments += "\n"
 
             #  If the feedback coloumn is not None, we can latee print it to file.   
-            if current_feedback_cell.value is not None:
-                question_comments += str(current_feedback_cell.value) + "\n"
+            if current_feedback_cell.value is not None and current_feedback_cell.value.strip() != "":
+                question_comments += str(current_feedback_cell.value.strip()) + "\n"
 
             # Print total marks 
             if str(current_heading_cell.value).strip().lower() == 'total':
@@ -86,7 +86,7 @@ def main():
             question_comments = ""
 
         # Add total to the end
-        output += "\n\n\n TOTAL: " + str(total)  + "/" + str(MAX_MARKS) 
+        output += "\n\n\nTOTAL: " + str(total)  + "/" + str(MAX_MARKS) 
         output += "\n\n\n=====================================\n\n\n"
 
     create_feedback_file(output) 
@@ -111,11 +111,12 @@ def create_feedback_file(content : str):
 def sort_worksheets(wb : xl.Workbook):
 
     print("[2/3] Sorting all worksheets by name...")
+    output_file_name = sys.argv[1][0: sys.argv[1].rfind(".")] + OUTPUT_XLSX_SUFFIX + ".xlsx"
     
     # Sort all worksheets by name (case-insensitive) before saving
     try:
         wb._sheets.sort(key=lambda ws: ws.title.lower())
-        wb.save(sys.argv[1])
+        wb.save(output_file_name)
         print("Worksheets sorted successfully.")
 
     except Exception:
@@ -156,7 +157,8 @@ def create_summary_worksheet(wb : xl.Workbook, all_students_information : list, 
     summary_sheet.append(["Percentage", percentage])
     
     # Save the workbook in the same workbook
-    wb.save(sys.argv[1])
+    output_file_name = sys.argv[1][0: sys.argv[1].rfind(".")] + OUTPUT_XLSX_SUFFIX + ".xlsx"
+    wb.save(output_file_name)
     print(f"Summary sheet '{summary_sheet_name}' added successfully.")
 
 
